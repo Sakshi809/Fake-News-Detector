@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruthLens — Fake News Detection System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="brand-icon">TL</div>
+        <div class="brand-text">
+          <span class="brand-name">TruthLens</span>
+          <span class="brand-sub">Fake News Detection System</span>
+        </div>
+      </div>
+      <div class="nav-badges">
+        <span class="badge">ML Powered</span>
+        <span class="badge">TF-IDF</span>
+        <span class="badge">PAC Algorithm</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <p class="hero-eyebrow">Mumbai University — Master's Project</p>
+        <h1 class="hero-title">Fake News Detection<br/>Using Machine Learning</h1>
+        <p class="hero-desc">A Natural Language Processing system that classifies news articles as Real or Fake using TF-IDF Vectorization and Passive Aggressive Classifier algorithm.</p>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num">TF-IDF</span>
+          <span class="stat-label">Vectorization</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">PAC</span>
+          <span class="stat-label">Algorithm</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">NLP</span>
+          <span class="stat-label">Based System</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">Flask</span>
+          <span class="stat-label">Backend</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN DETECTOR -->
+  <section class="detector-section">
+    <div class="detector-inner">
+
+      <!-- Input Panel -->
+      <div class="panel input-panel">
+        <div class="panel-header">
+          <div class="panel-icon">📝</div>
+          <div>
+            <h2 class="panel-title">Input Article</h2>
+            <p class="panel-subtitle">Paste any news article or headline</p>
+          </div>
+        </div>
+        <textarea
+          id="newsInput"
+          class="news-textarea"
+          placeholder="Enter a news headline or full article here…"
+          rows="10"
+        ></textarea>
+        <div class="textarea-footer">
+          <span class="char-count" id="charCount">0 characters</span>
+          <span class="hint">Ctrl+Enter to analyse</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="analyseBtn" onclick="analyseNews()">
+            <span class="btn-icon">🔍</span> Analyse Article
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="panel result-panel" id="resultCard">
+
+        <div id="resultIdle">
+          <div class="panel-header">
+            <div class="panel-icon">📊</div>
+            <div>
+              <h2 class="panel-title">Analysis Result</h2>
+              <p class="panel-subtitle">Result will appear after analysis</p>
+            </div>
+          </div>
+          <div class="idle-body">
+            <div class="idle-graphic">🔍</div>
+            <p class="idle-title">Ready to Analyse</p>
+            <p class="idle-desc">Enter a news article on the left and click Analyse Article to get the prediction.</p>
+          </div>
+        </div>
+
+        <div id="resultLoading" style="display:none;">
+          <div class="panel-header">
+            <div class="panel-icon">⚙️</div>
+            <div>
+              <h2 class="panel-title">Processing</h2>
+              <p class="panel-subtitle">Running ML pipeline…</p>
+            </div>
+          </div>
+          <div class="loading-body">
+            <div class="spinner"></div>
+            <p class="loading-step" id="loadingStep">Vectorizing text…</p>
+          </div>
+        </div>
+
+        <div id="resultOutput" style="display:none;">
+          <div class="panel-header">
+            <div class="panel-icon">✅</div>
+            <div>
+              <h2 class="panel-title">Analysis Complete</h2>
+              <p class="panel-subtitle">Classification result below</p>
+            </div>
+          </div>
+
+          <div class="verdict-wrap" id="verdictWrap">
+            <div class="verdict-badge" id="verdictBadge">
+              <span class="verdict-icon" id="verdictIcon"></span>
+              <span class="verdict-label" id="verdictLabel"></span>
+            </div>
+            <p class="verdict-desc" id="verdictDesc"></p>
+          </div>
+
+          <div class="confidence-block">
+            <div class="confidence-header">
+              <span class="conf-label">Confidence Score</span>
+              <span class="conf-value" id="confValue"></span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="conf-scale">
+              <span>50%</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div class="result-meta">
+            <div class="meta-item">
+              <span class="meta-label">Algorithm</span>
+              <span class="meta-value">Passive Aggressive Classifier</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Vectorizer</span>
+              <span class="meta-value">TF-IDF (Bigrams)</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Status</span>
+              <span class="meta-value meta-done">✔ Analysis Complete</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="resultError" style="display:none;">
+          <div class="error-body">
+            <span class="error-icon">⚠️</span>
+            <p class="error-msg" id="errorMsg"></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="pipeline-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">System Architecture</p>
+      <h2 class="section-title">ML Pipeline</h2>
+      <div class="pipeline-grid">
+        <div class="pipe-step">
+          <div class="pipe-icon">📥</div>
+          <div class="pipe-num">01</div>
+          <h3 class="pipe-title">Text Input</h3>
+          <p class="pipe-body">Raw news article or headline is accepted as input to the system.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">🧹</div>
+          <div class="pipe-num">02</div>
+          <h3 class="pipe-title">Preprocessing</h3>
+          <p class="pipe-body">Stop words removed, text normalized and cleaned for feature extraction.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">📐</div>
+          <div class="pipe-num">03</div>
+          <h3 class="pipe-title">TF-IDF Vectorization</h3>
+          <p class="pipe-body">Text converted to numerical feature vectors using unigrams and bigrams.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">🤖</div>
+          <div class="pipe-num">04</div>
+          <h3 class="pipe-title">PAC Classification</h3>
+          <p class="pipe-body">Passive Aggressive Classifier predicts REAL or FAKE with confidence score.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">TruthLens</span>
+        <span class="footer-tagline">Fake News Detection System</span>
+      </div>
+      <p class="footer-tech">Flask · scikit-learn · TF-IDF · Passive Aggressive Classifier · Python</p>
+      <p class="footer-copy">Mumbai University — Master's Project in Machine Learning</p>
+    </div>
+  </footer>
+
+  <script>
+    const textarea  = document.getElementById("newsInput");
+    const charCount = document.getElementById("charCount");
+
+    textarea.addEventListener("input", () => {
+      const n = textarea.value.length;
+      charCount.textContent = `${n} character${n !== 1 ? "s" : ""}`;
+    });
+
+    function showPanel(id) {
+      ["resultIdle","resultLoading","resultOutput","resultError"].forEach(p => {
+        document.getElementById(p).style.display = p === id ? "block" : "none";
+      });
+    }
+
+    // Loading steps animation
+    const steps = ["Vectorizing text…", "Running classifier…", "Calculating confidence…", "Preparing result…"];
+    let stepInterval;
+
+    async function analyseNews() {
+      const text = textarea.value.trim();
+      if (text.length < 20) {
+        showPanel("resultError");
+        document.getElementById("errorMsg").textContent = "Please enter at least 20 characters.";
+        return;
+      }
+
+      showPanel("resultLoading");
+      document.getElementById("analyseBtn").disabled = true;
+
+      let si = 0;
+      stepInterval = setInterval(() => {
+        document.getElementById("loadingStep").textContent = steps[si % steps.length];
+        si++;
+      }, 600);
+
+      try {
+        const response = await fetch("/predict", {
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ text })
+        });
+        const data = await response.json();
+        if (!response.ok || data.error) throw new Error(data.error || "Server error.");
+        renderResult(data);
+      } catch (err) {
+        showPanel("resultError");
+        document.getElementById("errorMsg").textContent = err.message;
+      } finally {
+        clearInterval(stepInterval);
+        document.getElementById("analyseBtn").disabled = false;
+      }
+    }
+
+    function renderResult({ prediction, confidence, label_class }) {
+      const isReal = label_class === "real";
+
+      document.getElementById("verdictWrap").className = `verdict-wrap verdict-wrap-${label_class}`;
+      document.getElementById("verdictBadge").className = `verdict-badge verdict-${label_class}`;
+      document.getElementById("verdictIcon").textContent  = isReal ? "✔" : "✘";
+      document.getElementById("verdictLabel").textContent = isReal ? "REAL NEWS" : "FAKE NEWS";
+
+      const descs = {
+        real: "The article demonstrates characteristics consistent with authentic news reporting.",
+        fake: "The article demonstrates characteristics associated with misinformation or fake news."
+      };
+      document.getElementById("verdictDesc").textContent = descs[label_class];
+      document.getElementById("confValue").textContent   = `${confidence}%`;
+
+      const fill = document.getElementById("progressFill");
+      fill.className   = `progress-fill fill-${label_class}`;
+      fill.style.width = "0%";
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        fill.style.width = `${confidence}%`;
+      }));
+
+      showPanel("resultOutput");
+    }
+
+    function clearAll() {
+      textarea.value        = "";
+      charCount.textContent = "0 characters";
+      showPanel("resultIdle");
+    }
+
+    textarea.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) analyseNews();
+    });
+  </script>
+</body>
+</html>

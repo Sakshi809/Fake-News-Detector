@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruthLens — Fake News Detection System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="brand-icon">TL</div>
+        <div class="brand-text">
+          <span class="brand-name">TruthLens</span>
+          <span class="brand-sub">Fake News Detection System</span>
+        </div>
+      </div>
+      <div class="nav-badges">
+        <span class="badge">4 ML Models</span>
+        <span class="badge">TF-IDF</span>
+        <span class="badge">Majority Voting</span>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 class="hero-title">AI-Powered News<br/>Verification System</h1>
+        <p class="hero-desc">An ensemble NLP system combining 4 ML algorithms with majority voting for accurate fake news classification.</p>
+      </div>
+      <div class="stats-row" id="statsRow">
+        <div class="stat-box">
+          <span class="stat-num" id="acc-pac">—</span>
+          <span class="stat-label">PAC</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="acc-lr">—</span>
+          <span class="stat-label">Logistic Reg.</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="acc-nb">—</span>
+          <span class="stat-label">Naive Bayes</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="acc-rf">—</span>
+          <span class="stat-label">Random Forest</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="detector-section">
+    <div class="detector-inner">
+
+      <div class="panel input-panel">
+        <div class="panel-header">
+          <div class="panel-icon">📝</div>
+          <div>
+            <h2 class="panel-title">Input Article</h2>
+            <p class="panel-subtitle">Paste any news article or headline</p>
+          </div>
+        </div>
+        <textarea id="newsInput" class="news-textarea" placeholder="Enter a news headline or full article here…" rows="10"></textarea>
+        <div class="textarea-footer">
+          <span class="char-count" id="charCount">0 characters</span>
+          <span class="hint">Ctrl+Enter to analyse</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="analyseBtn" onclick="analyseNews()">
+            <span>🔍</span> Analyse Article
+          </button>
+          <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+
+      <div class="panel result-panel">
+
+        <div id="resultIdle">
+          <div class="panel-header">
+            <div class="panel-icon">📊</div>
+            <div>
+              <h2 class="panel-title">Analysis Result</h2>
+              <p class="panel-subtitle">Result will appear after analysis</p>
+            </div>
+          </div>
+          <div class="idle-body">
+            <div class="idle-graphic">🔍</div>
+            <p class="idle-title">Ready to Analyse</p>
+            <p class="idle-desc">Enter a news article and click Analyse Article.</p>
+          </div>
+        </div>
+
+        <div id="resultLoading" style="display:none;">
+          <div class="panel-header">
+            <div class="panel-icon">⚙️</div>
+            <div>
+              <h2 class="panel-title">Processing</h2>
+              <p class="panel-subtitle">Running 4 ML models…</p>
+            </div>
+          </div>
+          <div class="loading-body">
+            <div class="spinner"></div>
+            <p class="loading-step" id="loadingStep">Vectorizing text…</p>
+          </div>
+        </div>
+
+        <div id="resultOutput" style="display:none;">
+          <div class="panel-header">
+            <div class="panel-icon">✅</div>
+            <div>
+              <h2 class="panel-title">Analysis Complete</h2>
+              <p class="panel-subtitle">Ensemble classification result</p>
+            </div>
+          </div>
+          <div class="verdict-wrap" id="verdictWrap">
+            <div class="verdict-badge" id="verdictBadge">
+              <span class="verdict-icon" id="verdictIcon"></span>
+              <span class="verdict-label" id="verdictLabel"></span>
+            </div>
+            <p class="verdict-desc" id="verdictDesc"></p>
+          </div>
+          <div class="confidence-block">
+            <div class="confidence-header">
+              <span class="conf-label">Ensemble Confidence</span>
+              <span class="conf-value" id="confValue"></span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="conf-scale">
+              <span>50%</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+          <div class="models-grid" id="modelsGrid"></div>
+        </div>
+
+        <div id="resultError" style="display:none;">
+          <div class="error-body">
+            <span class="error-icon">⚠️</span>
+            <p class="error-msg" id="errorMsg"></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="history-section" id="historySection" style="display:none;">
+    <div class="section-inner">
+      <div class="history-header">
+        <div>
+          <p class="section-eyebrow">Session Log</p>
+          <h2 class="section-title">Analysis History</h2>
+        </div>
+        <button class="btn btn-ghost" onclick="clearHistory()">Clear History</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </section>
+
+  <section class="pipeline-section">
+    <div class="section-inner">
+      <p class="section-eyebrow">System Architecture</p>
+      <h2 class="section-title">ML Pipeline</h2>
+      <div class="pipeline-grid">
+        <div class="pipe-step">
+          <div class="pipe-icon">📥</div>
+          <div class="pipe-num">01</div>
+          <h3 class="pipe-title">Text Input</h3>
+          <p class="pipe-body">Raw news article accepted as input.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">📐</div>
+          <div class="pipe-num">02</div>
+          <h3 class="pipe-title">TF-IDF</h3>
+          <p class="pipe-body">Text vectorized using unigrams and bigrams.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">🤖</div>
+          <div class="pipe-num">03</div>
+          <h3 class="pipe-title">4 ML Models</h3>
+          <p class="pipe-body">PAC, LR, Naive Bayes, Random Forest classify simultaneously.</p>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">
+          <div class="pipe-icon">🗳️</div>
+          <div class="pipe-num">04</div>
+          <h3 class="pipe-title">Majority Vote</h3>
+          <p class="pipe-body">Final verdict by ensemble majority voting system.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">TruthLens</span>
+        <span class="footer-tagline">Fake News Detection System</span>
+      </div>
+      <p class="footer-tech">Flask · scikit-learn · TF-IDF · PAC · Logistic Regression · Naive Bayes · Random Forest</p>
+      <p class="footer-copy">Master's Project in Machine Learning</p>
+    </div>
+  </footer>
+
+  <script>
+    window.addEventListener("load", async () => {
+      try {
+        const res  = await fetch("/accuracies");
+        const data = await res.json();
+        document.getElementById("acc-pac").textContent = data["Passive Aggressive"] + "%";
+        document.getElementById("acc-lr").textContent  = data["Logistic Regression"] + "%";
+        document.getElementById("acc-nb").textContent  = data["Naive Bayes"] + "%";
+        document.getElementById("acc-rf").textContent  = data["Random Forest"] + "%";
+      } catch(e) {}
+    });
+
+    let history = [];
+    const textarea  = document.getElementById("newsInput");
+    const charCount = document.getElementById("charCount");
+
+    textarea.addEventListener("input", () => {
+      const n = textarea.value.length;
+      charCount.textContent = `${n} character${n !== 1 ? "s" : ""}`;
+    });
+
+    function showPanel(id) {
+      ["resultIdle","resultLoading","resultOutput","resultError"].forEach(p => {
+        document.getElementById(p).style.display = p === id ? "block" : "none";
+      });
+    }
+
+    const steps = ["Vectorizing text…","Running PAC model…","Running Logistic Regression…","Running Naive Bayes…","Running Random Forest…","Combining votes…"];
+    let stepInterval;
+
+    async function analyseNews() {
+      const text = textarea.value.trim();
+      if (text.length < 20) {
+        showPanel("resultError");
+        document.getElementById("errorMsg").textContent = "Please enter at least 20 characters.";
+        return;
+      }
+      showPanel("resultLoading");
+      document.getElementById("analyseBtn").disabled = true;
+      let si = 0;
+      stepInterval = setInterval(() => {
+        document.getElementById("loadingStep").textContent = steps[si % steps.length];
+        si++;
+      }, 500);
+      try {
+        const response = await fetch("/predict", {
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ text })
+        });
+        const data = await response.json();
+        if (!response.ok || data.error) throw new Error(data.error || "Server error.");
+        renderResult(data, text);
+      } catch (err) {
+        showPanel("resultError");
+        document.getElementById("errorMsg").textContent = err.message;
+      } finally {
+        clearInterval(stepInterval);
+        document.getElementById("analyseBtn").disabled = false;
+      }
+    }
+
+    function renderResult(data, text) {
+      const { prediction, confidence, label_class, models } = data;
+      const isReal = label_class === "real";
+      document.getElementById("verdictWrap").className  = `verdict-wrap verdict-wrap-${label_class}`;
+      document.getElementById("verdictBadge").className = `verdict-badge verdict-${label_class}`;
+      document.getElementById("verdictIcon").textContent  = isReal ? "✔" : "✘";
+      document.getElementById("verdictLabel").textContent = isReal ? "REAL NEWS" : "FAKE NEWS";
+      document.getElementById("verdictDesc").textContent  = isReal
+        ? "Ensemble of 4 models classifies this as authentic news."
+        : "Ensemble of 4 models classifies this as fake or misleading news.";
+      document.getElementById("confValue").textContent = `${confidence}%`;
+      const fill = document.getElementById("progressFill");
+      fill.className   = `progress-fill fill-${label_class}`;
+      fill.style.width = "0%";
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        fill.style.width = `${confidence}%`;
+      }));
+      const grid = document.getElementById("modelsGrid");
+      grid.innerHTML = "";
+      Object.entries(models).forEach(([name, val]) => {
+        const isModelReal = val.pred === "REAL";
+        grid.innerHTML += `
+          <div class="model-card model-card-${val.pred.toLowerCase()}">
+            <span class="model-name">${name}</span>
+            <span class="model-verdict model-verdict-${val.pred.toLowerCase()}">${val.pred}</span>
+            <span class="model-conf">${val.conf}%</span>
+          </div>`;
+      });
+      showPanel("resultOutput");
+      history.unshift({ text: text.substring(0,80)+"…", prediction, confidence, label_class });
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        document.getElementById("historySection").style.display = "none";
+        return;
+      }
+      document.getElementById("historySection").style.display = "block";
+      const list = document.getElementById("historyList");
+      list.innerHTML = history.map((h, i) => `
+        <div class="history-item">
+          <span class="history-num">${String(history.length - i).padStart(2,"0")}</span>
+          <span class="history-text">${h.text}</span>
+          <span class="history-badge history-badge-${h.label_class}">${h.prediction}</span>
+          <span class="history-conf">${h.confidence}%</span>
+        </div>`).join("");
+    }
+
+    function clearHistory() {
+      history = [];
+      renderHistory();
+    }
+
+    function clearAll() {
+      textarea.value        = "";
+      charCount.textContent = "0 characters";
+      showPanel("resultIdle");
+    }
+
+    textarea.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) analyseNews();
+    });
+  </script>
+</body>
+</html>
